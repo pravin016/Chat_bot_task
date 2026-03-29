@@ -153,6 +153,46 @@ const ChatScreen = () => {
         </SafeAreaView>
       )}
 
+      {/* Subscription Status Bar */}
+      {!isPro && (
+        <View style={{ 
+          backgroundColor: '#FFF3E0', 
+          paddingHorizontal: 12, 
+          paddingVertical: 8,
+          borderBottomWidth: 1,
+          borderBottomColor: '#FFE0B2',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}>
+          <Text style={{ color: '#E65100', fontSize: 13, fontWeight: '600' }}>
+            {remainingMessages} messages left today
+          </Text>
+          <TouchableOpacity
+            onPress={() => setShowPaywall(true)}
+            style={{ paddingHorizontal: 8, paddingVertical: 4 }}
+          >
+            <Text style={{ color: '#FF9800', fontSize: 12, fontWeight: 'bold' }}>
+              Upgrade →
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {isPro && (
+        <View style={{ 
+          backgroundColor: '#E8F5E9', 
+          paddingHorizontal: 12, 
+          paddingVertical: 8,
+          borderBottomWidth: 1,
+          borderBottomColor: '#C8E6C9',
+        }}>
+          <Text style={{ color: '#2E7D32', fontSize: 12, fontWeight: '600' }}>
+            ✓ Pro Unlimited - Enjoy unrestricted messaging
+          </Text>
+        </View>
+      )}
+
       <KeyboardAvoidingView 
         style={{ flex: 1 }} 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

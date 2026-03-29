@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useAppTheme } from '../hooks/useAppTheme';
 
@@ -22,10 +22,21 @@ interface Plan {
 
 interface PaywallScreenProps {
   onClose?: () => void;
-  onSelectPlan?: (planId: string) => void;
+  onSelectPlan?: (pkg: any) => void;
+  onPurchase?: () => void;
+  offerings?: any;
+  selectedPackage?: any;
+  isLoading?: boolean;
 }
 
-const PaywallScreen: React.FC<PaywallScreenProps> = ({ onClose, onSelectPlan }) => {
+const PaywallScreen: React.FC<PaywallScreenProps> = ({ 
+  onClose, 
+  onSelectPlan, 
+  onPurchase,
+  offerings,
+  selectedPackage,
+  isLoading = false,
+}) => {
   const theme = useAppTheme();
   const [selectedPlan, setSelectedPlan] = useState<string>('pro');
 
@@ -226,13 +237,18 @@ const PaywallScreen: React.FC<PaywallScreenProps> = ({ onClose, onSelectPlan }) 
 
         {/* Subscribe Button */}
         <TouchableOpacity
-          style={[styles.subscribeButton, { backgroundColor: '#4CAF50' }]}
-          onPress={() => {
-            alert(`Subscribed to ${plans.find((p) => p.id === selectedPlan)?.name}`);
-          }}
+          style={[
+            styles.subscribeButton, 
+            { 
+              backgroundColor: isLoading ? '#bbb' : '#4CAF50',
+              opacity: isLoading ? 0.6 : 1,
+            }
+          ]}
+          onPress={onPurchase}
+          disabled={isLoading}
         >
           <Text style={styles.subscribeButtonText}>
-            Continue with {plans.find((p) => p.id === selectedPlan)?.name}
+            {isLoading ? 'Processing...' : `Continue with ${plans.find((p) => p.id === selectedPlan)?.name}`}
           </Text>
         </TouchableOpacity>
 

@@ -1,7 +1,7 @@
-import { useDispatch, useSelector } from 'react-redux';
-import { addMessage, setLoading } from '../store/chatSlice';
-import { chatService } from '../services/chat-optimized';
 import { useEffect, useRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { chatService } from '../services/chat-optimized';
+import { addMessage, setLoading } from '../store/chatSlice';
 
 export const useChat = () => {
   const dispatch = useDispatch();

@@ -90,10 +90,17 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
         const status = await checkSubscriptionStatus();
         Alert.alert(
           '🎉 Success!',
-          'Welcome to Pro! Enjoy unlimited messages and all premium features.'
+          'Welcome to Pro! Enjoy unlimited messages and all premium features.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                onSelectPlan?.(status);
+                onClose();
+              },
+            },
+          ]
         );
-        onSelectPlan?.(status);
-        onClose();
       } else {
         Alert.alert('Purchase Failed', 'The purchase could not be completed.');
       }

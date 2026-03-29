@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import PaywallModal from '../components/PaywallModal';
 import { useAppTheme } from '../hooks/useAppTheme';
+import { useSubscription } from '../hooks/useSubscription';
 import { supabase } from '../lib/supabase';
 import { logout } from '../store/authSlice';
 
@@ -11,20 +12,17 @@ const ProfileScreen = () => {
   const theme = useAppTheme();
   const router = useRouter();
   const dispatch = useDispatch();
-  const [isPro, setIsPro] = useState(false);
+  const { isPro, plan } = useSubscription();
   const [showPaywall, setShowPaywall] = useState(false);
-  const [userEmail] = useState('user@gmail.com');
+  const auth = useSelector((state: any) => state.auth);
+  const userEmail = auth?.user?.email || 'user@example.com';
 
   const handleUpgradePress = () => {
     setShowPaywall(true);
   };
 
-  const handlePlanSelect = (planId: string) => {
-    if (planId !== 'free') {
-      setIsPro(true);
-      alert('Thank you for upgrading to Pro! ✨');
-      setShowPaywall(false);
-    }
+  const handlePlanSelect = () => {
+    setShowPaywall(false);
   };
 
   const handleLogout = async () => {
@@ -103,14 +101,15 @@ const ProfileScreen = () => {
           <View style={styles.featuresPreview}>
             {(isPro
               ? [
+                  `✓ ${plan === 'annual' ? 'Annual' : 'Monthly'} Subscription`,
                   '✓ Unlimited messages',
                   '✓ Voice transcription',
                   '✓ Priority support',
                 ]
               : [
-                  '• Unlimited messages',
+                  '• 10 messages per day',
                   '• Voice input (tap 🎤)',
-                  '• Ad-free',
+                  '• Ad-free on desktop',
                 ]
             ).map((feature, index) => (
               <Text

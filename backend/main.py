@@ -194,13 +194,9 @@ async def chat(payload: ChatRequest, user: dict[str, Any] = Depends(verify_user_
         # Get the configured model
         model = require_gemini_model()
         
-        # Run the API call in a thread pool executor to avoid blocking the event loop
-        # Use a custom function that preserves the model instance
-        def generate_response():
-            return model.generate_content(prompt)
-        
-        # Run in thread with no timeout
-        response = await asyncio.to_thread(generate_response)
+        # Call Gemini API directly - FastAPI/Uvicorn already handles threading
+        # No need for asyncio.to_thread() which adds overhead
+        response = model.generate_content(prompt)
         reply = (response.text or "").strip() or "I could not generate a response."
         reply = clean_markdown(reply)  # Remove any markdown that slipped through
             
@@ -221,29 +217,24 @@ async def chat(payload: ChatRequest, user: dict[str, Any] = Depends(verify_user_
             reply = "I'm having trouble processing that right now. Could you please rephrase?"
 
     # Log to Supabase in background (doesn't block response)
-    def log_to_supabase():
-        try:
-            record = {
-                "prompt": payload.message,
-                "reply": reply,
-                "created_at": datetime.now(timezone.utc).isoformat(),
-            }
-            if user.get("id"):
-                record["user_id"] = user["id"]
-                record["user_email"] = user["email"]
-                
-            require_supabase().table("chat_messages").insert(record).execute()
-        except Exception as e:
-            print(f"Supabase log skipped: {e}")
-
     if background_tasks:
-        background_tasks.add_task(log_to_supabase)
-    else:
-        # Fallback if background_tasks is None
-        try:
-            log_to_supabase()
-        except:
-            pass
+        async def log_to_supabase_async():
+            try:
+                record = {
+                    "prompt": payload.message,
+                    "reply": reply,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                }
+                if user.get("id"):
+                    record["user_id"] = user["id"]
+                    record["user_email"] = user["email"]
+                    
+                # Use asyncio.to_thread only for actual I/O, not for Gemini
+                await asyncio.to_thread(lambda: require_supabase().table("chat_messages").insert(record).execute())
+            except Exception as e:
+                logger.debug(f"Supabase log skipped: {e}")
+        
+        background_tasks.add_task(log_to_supabase_async)
 
     return ChatResponse(reply=reply)
 
@@ -290,11 +281,10 @@ async def transcribe_audio(file: UploadFile = File(...)):
                 os.remove(tmp_path)
             return {"text": f"Error loading Gemini model: {str(model_error)}"}
         
-        # Generate content with audio
+        # Generate content with audio - call directly without to_thread
         try:
             print("[STT] Generating transcription...")
-            response = await asyncio.to_thread(
-                model.generate_content,
+            response = model.generate_content(
                 ["Transcribe this audio accurately and completely. Output ONLY the transcribed text, nothing else.", audio_file]
             )
             
@@ -344,9 +334,9 @@ async def websocket_chat(websocket: WebSocket, token: str = ""):
                 f"User message: {data}"
             )
             
-            # Use asyncio to_thread to prevent blocking the async FastAPI event loop
+            # Call Gemini API directly without to_thread - FastAPI already handles threading
             try:
-                response = await asyncio.to_thread(model.generate_content, prompt)
+                response = model.generate_content(prompt)
                 reply = (response.text or "").strip() or "I could not generate a response."
                 reply = clean_markdown(reply)  # Remove any markdown that slipped through
             except Exception as e:
@@ -355,19 +345,23 @@ async def websocket_chat(websocket: WebSocket, token: str = ""):
                 
             await websocket.send_json({"reply": reply})
 
-            # Fire and forget supabase logging
-            try:
-                record = {
-                    "prompt": data,
-                    "reply": reply,
-                    "created_at": datetime.now(timezone.utc).isoformat(),
-                }
-                if user_info.get("id"):
-                    record["user_id"] = user_info["id"]
-                    record["user_email"] = user_info["email"]
-                await asyncio.to_thread(lambda: require_supabase().table("chat_messages").insert(record).execute())
-            except Exception as e:
-                print(f"Supabase log skipped: {e}")
+            # Fire and forget supabase logging - use asyncio.to_thread for I/O
+            async def log_ws_message():
+                try:
+                    record = {
+                        "prompt": data,
+                        "reply": reply,
+                        "created_at": datetime.now(timezone.utc).isoformat(),
+                    }
+                    if user_info.get("id"):
+                        record["user_id"] = user_info["id"]
+                        record["user_email"] = user_info["email"]
+                    await asyncio.to_thread(lambda: require_supabase().table("chat_messages").insert(record).execute())
+                except Exception as e:
+                    print(f"Supabase log skipped: {e}")
+            
+            # Don't await - fire and forget
+            asyncio.create_task(log_ws_message())
 
     except WebSocketDisconnect:
         print("Client disconnected from websocket")

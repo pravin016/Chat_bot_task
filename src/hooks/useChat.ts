@@ -1,11 +1,13 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { addMessage, setLoading } from '../store/chatSlice';
 import { chatService } from '../services/chat-optimized';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export const useChat = () => {
   const dispatch = useDispatch();
   const { messages, loading } = useSelector((state: any) => state.chat);
+  const lastSendTimeRef = useRef<number>(0);
+  const DEBOUNCE_MS = 300; // Prevent requests faster than 300ms
 
   // Initialize chat service on mount
   useEffect(() => {
@@ -18,6 +20,14 @@ export const useChat = () => {
 
   const handleSend = async (text: string) => {
     if (!text.trim()) return;
+
+    // Debounce - prevent rapid-fire requests
+    const now = Date.now();
+    if (now - lastSendTimeRef.current < DEBOUNCE_MS) {
+      console.log('[useChat] Request throttled - too fast');
+      return;
+    }
+    lastSendTimeRef.current = now;
 
     console.log('[useChat] Sending:', text.substring(0, 50));
 

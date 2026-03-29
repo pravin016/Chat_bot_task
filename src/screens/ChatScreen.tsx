@@ -1,5 +1,5 @@
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 import ChatBubble from '../components/ChatBubble';
 import InputBar from '../components/InputBar';
@@ -55,42 +55,25 @@ const ChatScreen = () => {
   const [isRecording, setIsRecording] = useState(false);
   const inputBarRef = useRef<any>(null);
 
-  // Load new suggestions when component mounts or when chat is empty
+  // Load suggestions when component mounts or when chat is empty - removed 800ms artificial delay
   useEffect(() => {
     if (messages.length === 0) {
-      setLoadingSuggestions(true);
-      setTimeout(() => {
-        setSuggestions(getRandomSuggestions(3));
-        setLoadingSuggestions(false);
-      }, 800);
+      setSuggestions(getRandomSuggestions(3));
     }
   }, [messages.length]);
 
-  // Auto-start voice recording when screen loads
-  useEffect(() => {
-    const autoStartVoice = async () => {
-      // Small delay to ensure component is ready
-      setTimeout(() => {
-        if (inputBarRef.current?.startRecording) {
-          console.log('[ChatScreen] Auto-starting voice recording');
-          inputBarRef.current.startRecording();
-        }
-      }, 500);
-    };
+  // Removed auto-start voice recording - users can start it manually when needed
+  // This saves ~500ms on first load and reduces unnecessary battery drain
 
-    if (messages.length === 0) {
-      autoStartVoice();
-    }
-  }, []);
-
-  // Track message count for free users
+  // Track message count for free users - calculate only when needed
   useEffect(() => {
     if (!isPro) {
-      setMessageCount(messages.filter(m => m.role === 'user').length);
+      const userMessageCount = messages.filter(m => m.role === 'user').length;
+      setMessageCount(userMessageCount);
     }
-  }, [messages, isPro]);
+  }, [messages.length, isPro]);
 
-  const handleSuggestClick = (text: string) => {
+  const handleSuggestClick = useCallback((text: string) => {
     // Check limits for free users
     if (!isPro && messageCount >= DAILY_MESSAGE_LIMIT_FREE) {
       setShowPaywall(true);
@@ -99,9 +82,9 @@ const ChatScreen = () => {
     trackMessage();
     handleSend(text);
     setShowSuggestions(false);
-  };
+  }, [isPro, messageCount, trackMessage, handleSend]);
 
-  const handleSendMessage = (text: string) => {
+  const handleSendMessage = useCallback((text: string) => {
     // Check limits for free users
     if (!isPro && messageCount >= DAILY_MESSAGE_LIMIT_FREE) {
       setShowPaywall(true);
@@ -109,16 +92,16 @@ const ChatScreen = () => {
     }
     trackMessage();
     handleSend(text);
-  };
+  }, [isPro, messageCount, trackMessage, handleSend]);
 
-  const remainingMessages = !isPro ? Math.max(0, DAILY_MESSAGE_LIMIT_FREE - messageCount) : null;
-  const showLimitWarning = !isPro && remainingMessages !== null && remainingMessages <= 2;
-
-  const handlePlanSelect = (planId: string) => {
+  const handlePlanSelect = useCallback((planId: string) => {
     if (planId !== 'free') {
       setShowPaywall(false);
     }
-  };
+  }, []);
+
+  const remainingMessages = !isPro ? Math.max(0, DAILY_MESSAGE_LIMIT_FREE - messageCount) : null;
+  const showLimitWarning = !isPro && remainingMessages !== null && remainingMessages <= 2;
 
   // Show loading while initializing RevenueCat
   if (isInitializing) {
@@ -190,13 +173,17 @@ const ChatScreen = () => {
             data={messages}
             inverted
             keyExtractor={(_, i) => i.toString()}
-            renderItem={({ item }) => (
+            renderItem={useCallback(({ item }) => (
               <ChatBubble message={item} />
-            )}
+            ), [])}
             ListFooterComponent={loading ? <Loader /> : null}
             contentContainerStyle={{
               paddingBottom: 10,
             }}
+            removeClippedSubviews={true}
+            maxToRenderPerBatch={10}
+            updateCellsBatchingPeriod={50}
+            initialNumToRender={10}
           />
         )}
 

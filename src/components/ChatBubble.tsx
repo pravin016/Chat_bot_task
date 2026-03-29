@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, memo } from 'react-native';
 import { colors } from '../theme/colors';
 
 const cleanMarkdown = (text: string) => {
@@ -9,7 +9,7 @@ const cleanMarkdown = (text: string) => {
     .replace(/\n\n/g, '\n'); // Normalize multiple newlines
 };
 
-const ChatBubble = ({ message }) => {
+const ChatBubble = memo(({ message }) => {
   const isUser = message.role === 'user';
   const cleanText = cleanMarkdown(message.text);
 
@@ -23,7 +23,9 @@ const ChatBubble = ({ message }) => {
       <Text style={styles.text}>{cleanText}</Text>
     </View>
   );
-};
+});
+
+ChatBubble.displayName = 'ChatBubble';
 
 export default ChatBubble;
 

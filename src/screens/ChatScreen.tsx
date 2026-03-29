@@ -153,6 +153,9 @@ const ChatScreen = () => {
         </SafeAreaView>
       )}
 
+      {/* Connection Status Banner */}
+      <ConnectionStatusBanner showDetails={false} />
+
       {/* Subscription Status Bar */}
       {!isPro && (
         <View style={{ 

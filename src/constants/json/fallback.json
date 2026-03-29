@@ -1,0 +1,35 @@
+{
+  "system": {
+    "appName": "Helper Cane AI",
+    "version": "1.0.0",
+    "comingSoon": "This feature is coming soon! Stay tuned.",
+    "offlineNotice": "You are currently offline. Viewing cached data."
+  },
+  "home": {
+    "greeting": "Hello, Friend",
+    "prompt": "How can I help you today?",
+    "suggestions": [
+      {
+        "id": "1",
+        "text": "Which foods cause acne?",
+        "action": "chat"
+      },
+      {
+        "id": "2",
+        "text": "Safe snacks for sensitive skin",
+        "action": "chat"
+      },
+      {
+        "id": "3",
+        "text": "Best morning routine?",
+        "action": "chat"
+      }
+    ]
+  },
+  "errors": {
+    "default": "Something went wrong. Please try again.",
+    "network": "No internet connection. Please check your network.",
+    "unauthorized": "Please log in to continue.",
+    "subscriptionRequired": "Upgrade to Pro to unlock unlimited chats."
+  }
+}

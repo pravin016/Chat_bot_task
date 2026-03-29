@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+# Pin: newer supabase pulls pyiceberg (needs MSVC build on Windows / Python 3.14)
+supabase==2.3.4
+google-generativeai
+sentry-sdk
